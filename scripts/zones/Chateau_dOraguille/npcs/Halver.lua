@@ -60,6 +60,8 @@ entity.onTrigger = function(player, npc)
         elseif (currentMission == tpz.mission.id.sandoria.THE_HEIR_TO_THE_LIGHT and MissionStatus > 1) then
             player:startEvent(29)
         -- Mission San d'Oria 9-1 Lightbringer (optional)
+        elseif (currentMission == tpz.mission.id.sandoria.BREAKING_BARRIERS and MissionStatus == 0) then
+            player:startEvent(26)
         elseif (currentMission == tpz.mission.id.sandoria.BREAKING_BARRIERS and MissionStatus == 1) then
             player:startEvent(1)
         -- Mission San d'Oria 8-2 Lightbringer (optional)
@@ -200,7 +202,7 @@ entity.onEventFinish = function(player, csid, option)
         player:setCharVar("MissionStatus", 2)
     elseif (csid == 102) then
         finishMissionTimeline(player, 3, csid, option)
-        player:setCharVar("Wait1DayM8-1_date", os.date("%j"))
+        player:setCharVar("Wait1DayM8-1_date", os.time() + 60)
     elseif (csid == 564 and option == 1) then
         player:completeMission(tpz.mission.log_id.TOAU, tpz.mission.id.toau.CONFESSIONS_OF_ROYALTY)
         player:addMission(tpz.mission.log_id.TOAU, tpz.mission.id.toau.EASTERLY_WINDS)

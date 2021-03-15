@@ -23,7 +23,7 @@
 #include "../packets/action.h"
 
 CLuaAction::CLuaAction(action_t* Action)
-:m_PLuaAction(Action)
+: m_PLuaAction(Action)
 {
     if (Action == nullptr)
     {
@@ -43,9 +43,14 @@ void CLuaAction::ID(uint32 actionTargetID, uint16 newActionTargetID)
     }
 }
 
-void CLuaAction::recast(uint16 recast)
+void CLuaAction::setRecast(uint16 recast)
 {
     m_PLuaAction->recast = recast;
+}
+
+uint16 CLuaAction::getRecast()
+{
+    return m_PLuaAction->recast;
 }
 
 void CLuaAction::actionID(uint16 actionid)
@@ -77,7 +82,20 @@ void CLuaAction::messageID(uint32 actionTargetID, uint16 messageID)
     }
 }
 
-void CLuaAction::animation(uint32 actionTargetID, uint16 animation)
+std::optional<uint16> CLuaAction::getAnimation(uint32 actionTargetID)
+{
+    for (auto&& actionList : m_PLuaAction->actionLists)
+    {
+        if (actionList.ActionTargetID == actionTargetID)
+        {
+            return actionList.actionTargets[0].animation;
+        }
+    }
+
+    return std::nullopt;
+}
+
+void CLuaAction::setAnimation(uint32 actionTargetID, uint16 animation)
 {
     for (auto&& actionList : m_PLuaAction->actionLists)
     {
@@ -155,11 +173,13 @@ void CLuaAction::Register()
 {
     SOL_USERTYPE("CAction", CLuaAction);
     SOL_REGISTER("ID", CLuaAction::ID);
-    SOL_REGISTER("recast", CLuaAction::recast);
+    SOL_REGISTER("getRecast", CLuaAction::getRecast);
+    SOL_REGISTER("setRecast", CLuaAction::setRecast);
     SOL_REGISTER("actionID", CLuaAction::actionID);
     SOL_REGISTER("param", CLuaAction::param);
     SOL_REGISTER("messageID", CLuaAction::messageID);
-    SOL_REGISTER("animation", CLuaAction::animation);
+    SOL_REGISTER("getAnimation", CLuaAction::getAnimation);
+    SOL_REGISTER("setAnimation", CLuaAction::setAnimation);
     SOL_REGISTER("speceffect", CLuaAction::speceffect);
     SOL_REGISTER("reaction", CLuaAction::reaction);
     SOL_REGISTER("additionalEffect", CLuaAction::additionalEffect);

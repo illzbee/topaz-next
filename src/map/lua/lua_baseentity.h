@@ -114,7 +114,8 @@ public:
     void  pathTo(float x, float y, float z, sol::object const& flags);             // set new path to point without changing action
     bool  pathThrough(sol::table const& pointsTable, sol::object const& flagsObj); // walk at normal speed through the given points
     bool  isFollowingPath();                                                       // checks if the entity is following a path
-    void  clearPath();                                                             // removes current pathfind and stops moving
+    void  clearPath(sol::object const& pauseObj);                                  // removes current pathfind and stops moving
+    void  continuePath();                                                          // resumes previous pathfind if it was paused
     float checkDistance(sol::variadic_args va);                                    // Check Distacnce and returns distance number
     void  wait(sol::object const& milliseconds);                                   // make the npc wait a number of ms and then back into roam
     // int32 WarpTo(lua_Stat* L);           // warp to the given point -- These don't exist, breaking them just in case someone uncomments
@@ -192,15 +193,17 @@ public:
     bool   hasItem(uint16 itemID, sol::object const& location);    // Check to see if Entity has item in inventory (hasItem(itemNumber))
     bool   addItem(sol::variadic_args va);                         // Add item to Entity inventory (additem(itemNumber,quantity))
     bool   delItem(uint16 itemID, uint32 quantity, sol::object const& containerID);
-    bool   addUsedItem(uint16 itemID);                          // Add charged item with timer already on full cooldown
-    bool   addTempItem(uint16 itemID, sol::object const& arg1); // Add temp item to Entity Temp inventory
-    bool   hasWornItem(uint16 itemID);                          // Check if the item is already worn (player:hasWornItem(itemid))
-    void   createWornItem(uint16 itemID);                       // Update this item in worn item (player:createWornItem(itemid))
+    bool   addUsedItem(uint16 itemID);                                                      // Add charged item with timer already on full cooldown
+    bool   addTempItem(uint16 itemID, sol::object const& arg1);                             // Add temp item to Entity Temp inventory
+    bool   hasWornItem(uint16 itemID);                                                      // Check if the item is already worn (player:hasWornItem(itemid))
+    void   createWornItem(uint16 itemID);                                                   // Update this item in worn item (player:createWornItem(itemid))
+    auto   findItem(uint16 itemID, sol::object const& location) -> std::optional<CLuaItem>; // Like hasItem, but returns the item object (nil if not found)
 
     void createShop(uint8 size, sol::object const& arg1);                                               // Prepare the container for work of shop ??
     void addShopItem(uint16 itemID, double rawPrice, sol::object const& arg2, sol::object const& arg3); // Adds item to shop container (16 max)
     auto getCurrentGPItem(uint8 guildID) -> std::tuple<uint16, uint16>;                                 // Gets current GP item id and max points
     bool breakLinkshell(std::string const& lsname);                                                     // Breaks all pearls/sacks
+    bool addLinkpearl(std::string const& lsname, bool equip);                                           // Creates a linkpearl (pearlsack for GMs)
 
     // Trading
     uint8 getContainerSize(uint8 locationID);                  // Gets the current capacity of a container
@@ -329,10 +332,16 @@ public:
     void   setMissionLogEx(uint8 missionLogID, sol::object const& arg2Obj, sol::object const& arg3Obj); // Sets mission log extra data to correctly track progress in branching missions.
     uint32 getMissionLogEx(uint8 missionLogID, sol::object const& missionLogExPosObj);                  // Gets mission log extra data.
 
-    void setEminenceCompleted(uint16 recordID, sol::object const& arg1, sol::object const& arg2); // Sets the complete flag for a record of eminence
-    bool getEminenceCompleted(uint16 recordID);                                                   // Gets the record completed flag
-    bool setEminenceProgress(uint16 recordID, uint32 progress, sol::object const& arg2);          // Sets progress on a record of eminence
-    auto getEminenceProgress(uint16 recordID) -> std::optional<uint32>;                           // gets progress on a record of eminence
+    void   setEminenceCompleted(uint16 recordID, sol::object const& arg1, sol::object const& arg2); // Sets the complete flag for a record of eminence
+    bool   getEminenceCompleted(uint16 recordID);                                                   // Gets the record completed flag
+    uint16 getNumEminenceCompleted();                                                               // Get total count of records completed for player
+    bool   setEminenceProgress(uint16 recordID, uint32 progress, sol::object const& arg2);          // Sets progress on a record of eminence
+    auto   getEminenceProgress(uint16 recordID) -> std::optional<uint32>;                           // gets progress on a record of eminence
+    bool   hasEminenceRecord(uint16 recordID);                                                      // Check if record is active
+    void   triggerRoeEvent(uint8 eventNum, sol::object const& reqTable);
+    void   setUnityLeader(uint8 leaderID);                                                          // Sets a player's unity leader
+    uint8  getUnityLeader();                                                                        // Returns player's unity leader
+    auto   getUnityRank(sol::object const& unityObj) -> std::optional<uint8>;                      // Returns current rank of player's unity
 
     void  addAssault(uint8 missionID);          // Add Mission
     void  delAssault(uint8 missionID);          // Delete Mission from Mission Log
@@ -421,6 +430,8 @@ public:
     bool hasLearnedWeaponskill(uint8 wsID);
     void delLearnedWeaponskill(uint8 wsID);
 
+    void trySkillUp(uint8 skill, uint8 level, sol::object const& forceSkillUpObj, sol::object const& useSubSkillObj);
+
     bool addWeaponSkillPoints(uint8 slotID, uint16 points); // Adds weapon skill points to an equipped weapon
 
     void   addLearnedAbility(uint16 abilityID); // Add spell to Entity spell list
@@ -428,10 +439,10 @@ public:
     uint32 canLearnAbility(uint16 abilityID);   // Check to see if character can learn spell, 0 if so
     void   delLearnedAbility(uint16 abilityID); // Remove spell from Entity spell list
 
-    void   addSpell(uint16 spellID, sol::object const& arg_silent, sol::object const& arg_save); // Add spell to Entity spell list
-    bool   hasSpell(uint16 spellID);                                                             // Check to see if character has item in spell list
-    uint32 canLearnSpell(uint16 spellID);                                                        // Check to see if character can learn spell, 0 if so
-    void   delSpell(uint16 spellID);                                                             // Remove spell from Entity spell list
+    void   addSpell(uint16 spellID, sol::variadic_args va); // Add spell to Entity spell list
+    bool   hasSpell(uint16 spellID);                        // Check to see if character has item in spell list
+    uint32 canLearnSpell(uint16 spellID);                   // Check to see if character can learn spell, 0 if so
+    void   delSpell(uint16 spellID);                        // Remove spell from Entity spell list
 
     void recalculateSkillsTable();
     void recalculateAbilitiesTable();
@@ -546,7 +557,7 @@ public:
     uint8  countEffect(uint16 StatusID);                                    // Gets the number of effects of a specific type on the player
 
     bool   delStatusEffect(uint16 StatusID, sol::object const& SubID);                   // Removes Status Effect
-    void   delStatusEffectsByFlag(uint16 flag, sol::object const& silent);               // Removes Status Effects by Flag
+    void   delStatusEffectsByFlag(uint32 flag, sol::object const& silent);               // Removes Status Effects by Flag
     bool   delStatusEffectSilent(uint16 StatusID);                                       // Removes Status Effect, suppresses message
     uint16 eraseStatusEffect();                                                          // Used with "Erase" spell
     uint8  eraseAllStatusEffect();                                                       // Erases all effects and returns number erased
@@ -736,6 +747,7 @@ public:
     uint16 getDespoilDebuff(uint16 itemID);                                              // gets the status effect id to apply to the mob on successful despoil
     bool   itemStolen();                                                                 // sets mob's ItemStolen var = true
     int16  getTHlevel();                                                                 // Returns the Monster's current Treasure Hunter Tier
+    void   addDropListModification(uint16 id, uint16 newRate, sol::variadic_args va);    // Adds a modification to the drop list of this mob, erased on death
 
     static void Register();
 };

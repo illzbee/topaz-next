@@ -8,6 +8,8 @@ require("scripts/globals/settings")
 require("scripts/globals/missions")
 require("scripts/globals/keyitems")
 require("scripts/globals/npc_util")
+require("scripts/globals/quests")
+require("scripts/globals/titles")
 local ID = require("scripts/zones/Windurst_Waters/IDs")
 -----------------------------------
 local entity = {}
@@ -23,10 +25,10 @@ end
 
 entity.onTrigger = function(player, npc)
     local moonlitPath = player:getQuestStatus(tpz.quest.log_id.WINDURST, tpz.quest.id.windurst.THE_MOONLIT_PATH)
-    local realday = tonumber(os.date("%j")) -- %M for next minute, %j for next day
     local MissionStatus = player:getCharVar("MissionStatus")
     local tuningIn = player:getQuestStatus(tpz.quest.log_id.WINDURST, tpz.quest.id.windurst.TUNING_IN)
     local tuningOut = player:getQuestStatus(tpz.quest.log_id.WINDURST, tpz.quest.id.windurst.TUNING_OUT)
+    local turmoil = player:getQuestStatus(tpz.quest.log_id.WINDURST, tpz.quest.id.windurst.TORAIMARAI_TURMOIL)
 
     -- Check if we are on Windurst Mission 1-3 and haven't already delivered both offerings.
     if (player:getCurrentMission(WINDURST) == tpz.mission.id.windurst.THE_PRICE_OF_PEACE and MissionStatus < 3) then
@@ -107,19 +109,17 @@ entity.onTrigger = function(player, npc)
                 player:hasKeyItem(tpz.ki.FENRIR_WHISTLE) then availRewards = availRewards + 128; end -- Mount Pact
 
             player:startEvent(850, 0, 13399, 1208, 1125, availRewards, 18165, 13572)
-        elseif (realday ~= player:getCharVar("MoonlitPath_date")) then --24 hours have passed, flag a new fight
+        elseif (os.time() > player:getCharVar("MoonlitPath_date")) then --24 hours have passed, flag a new fight
             player:startEvent(848, 0, 1125, 334)
         end
-
     elseif tuningIn == QUEST_ACCEPTED then
         player:startEvent(885, 0, 1696, 1697, 1698) -- Reminder to bring Magicked Steel Ingot, Spruce Lumber, Extra-fine File
-
     elseif tuningOut == QUEST_ACCEPTED then
         player:startEvent(889) -- Reminder to go help Ildy in Kazham
-
     elseif moonlitPath == QUEST_COMPLETED then
         player:startEvent(847, 0, 1125) -- Having completed Moonlit Path, this will indefinitely replace his standard dialogue!
-
+    elseif turmoil == QUEST_ACCEPTED then
+        player:startEvent(790, 0, tpz.ki.RHINOSTERY_CERTIFICATE)
     else
         player:startEvent(345) -- Standard Dialogue?
     end
@@ -178,7 +178,7 @@ entity.onEventFinish = function(player, csid, option)
         if (reward ~= nil) then
             player:addTitle(tpz.title.HEIR_OF_THE_NEW_MOON)
             player:delKeyItem(tpz.ki.WHISPER_OF_THE_MOON)
-            player:setCharVar("MoonlitPath_date", os.date("%j")) -- %M for next minute, %j for next day
+            player:setCharVar("MoonlitPath_date", getMidnight())
             player:addFame(WINDURST, 30)
             player:completeQuest(tpz.quest.log_id.WINDURST, tpz.quest.id.windurst.THE_MOONLIT_PATH)
         end
@@ -215,7 +215,7 @@ entity.onEventFinish = function(player, csid, option)
         if (reward ~= nil) then
             player:addTitle(tpz.title.HEIR_OF_THE_NEW_MOON)
             player:delKeyItem(tpz.ki.WHISPER_OF_THE_MOON)
-            player:setCharVar("MoonlitPath_date", os.date("%j")) -- %M for next minute, %j for next day
+            player:setCharVar("MoonlitPath_date", getMidnight())
             player:addFame(WINDURST, 30)
         end
 

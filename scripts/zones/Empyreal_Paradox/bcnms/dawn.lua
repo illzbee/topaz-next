@@ -18,11 +18,11 @@ battlefield_object.onBattlefieldInitialise = function(battlefield)
     local baseID = ID.mob.PROMATHIA_OFFSET + (battlefield:getArea() - 1) * 2
     local pos = GetMobByID(baseID):getSpawnPos()
 
-    local prishe = battlefield:insertEntity(14166, true, true)
+    local prishe = battlefield:insertEntity(11, true, true)
     prishe:setSpawn(pos.x - 6, pos.y, pos.z - 21.5, 192)
     prishe:spawn()
 
-    local selhteus = battlefield:insertEntity(14167, true, true)
+    local selhteus = battlefield:insertEntity(12, true, true)
     selhteus:setSpawn(pos.x + 10, pos.y, pos.z - 17.5, 172)
     selhteus:spawn()
 end
@@ -60,7 +60,7 @@ battlefield_object.onEventFinish = function(player, csid, option)
         if player:getCurrentMission(COP) == tpz.mission.id.cop.DAWN and player:getCharVar("PromathiaStatus") == 2 then
             player:addKeyItem(tpz.ki.TEAR_OF_ALTANA)
             player:messageSpecial(ID.text.KEYITEM_OBTAINED, tpz.ki.TEAR_OF_ALTANA)
-            player:setCharVar("Promathia_kill_day", tonumber(os.date("%j")))
+            player:setCharVar("Promathia_kill_day", getMidnight())
             player:setCharVar("PromathiaStatus", 3)
         end
     end

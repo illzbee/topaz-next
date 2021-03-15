@@ -221,7 +221,22 @@ int32 CBattleEntity::GetMaxMP() const
 
 uint8 CBattleEntity::GetSpeed()
 {
-    int16 startingSpeed = isMounted() ? 40 + map_config.mount_speed_mod : speed;
+    int8 bonus = 0;
+    // NPC's don't get a bonus. Just players, mobs, pets..
+
+    // Mobs get their speed boost while agro'd/engaged
+    if (objtype == TYPE_MOB && animation == ANIMATION_ATTACK)
+    {
+        bonus = map_config.mob_speed_mod;
+        // ShowDebug("mob speed bonus: '%i' \n", bonus);
+    }
+    // Pets share the owners map_config.
+    else if (objtype == TYPE_PC || objtype == TYPE_PET)
+    {
+        bonus = map_config.speed_mod;
+    }
+
+    int16 startingSpeed = isMounted() ? 40 + map_config.mount_speed_mod : speed + bonus;
 
     // Mod::MOVE (169)
     // Mod::MOUNT_MOVE (972)
@@ -1481,6 +1496,12 @@ void CBattleEntity::OnCastFinished(CMagicState& state, action_t& action)
             if (PSpell->isHeal())
             {
                 roeutils::event(ROE_HEALALLY, static_cast<CCharEntity*>(this), RoeDatagram("heal", actionTarget.param));
+
+                // We know its an ally or self, if not self and leader matches, credit the RoE Objective
+                if (this != PTarget && this->objtype == TYPE_PC && PTarget->objtype == TYPE_PC && static_cast<CCharEntity*>(this)->profile.unity_leader == static_cast<CCharEntity*>(PTarget)->profile.unity_leader)
+                {
+                    roeutils::event(ROE_HEAL_UNITYALLY, static_cast<CCharEntity*>(this), RoeDatagram("heal", actionTarget.param));
+                }
             }
             else if (this != PTarget && PSpell->isBuff() && actionTarget.param)
             {
@@ -1798,7 +1819,7 @@ bool CBattleEntity::OnAttack(CAttackState& state, action_t& action)
             actionTarget.param = 0;
         }
 
-        if (actionTarget.reaction != REACTION::EVADE && actionTarget.reaction != REACTION::PARRY)
+        if (actionTarget.reaction != REACTION::EVADE && actionTarget.reaction != REACTION::PARRY && attack.GetAttackType() != PHYSICAL_ATTACK_TYPE::DAKEN)
         {
             battleutils::HandleEnspell(this, PTarget, &actionTarget, attack.IsFirstSwing(), (CItemWeapon*)this->m_Weapons[attack.GetWeaponSlot()],
                                        attack.GetDamage());

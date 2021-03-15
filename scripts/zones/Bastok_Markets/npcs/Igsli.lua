@@ -1,8 +1,9 @@
 -----------------------------------
--- Area: Southern San d'Oria
---  NPC: Chat Manual
--- Type: Tutorial NPC
--- !pos -68.800 2.000 -46.560 230
+-- Area: Bastok Markets
+-- NPC : Igsli
+-- Unity NPC
+-----------------------------------
+require("scripts/globals/unity")
 -----------------------------------
 local entity = {}
 
@@ -10,13 +11,15 @@ entity.onTrade = function(player, npc, trade)
 end
 
 entity.onTrigger = function(player, npc)
-    player:startEvent(6106)
+    tpz.unity.onTrigger(player, npc)
 end
 
 entity.onEventUpdate = function(player, csid, option)
+    tpz.unity.onEventUpdate(player, csid, option)
 end
 
 entity.onEventFinish = function(player, csid, option)
+    tpz.unity.onEventFinish(player, csid, option)
 end
 
 return entity
